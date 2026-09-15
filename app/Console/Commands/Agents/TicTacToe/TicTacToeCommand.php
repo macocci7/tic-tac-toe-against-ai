@@ -1,0 +1,56 @@
+<?php
+
+namespace App\Console\Commands\Agents\TicTacToe;
+
+use App\Console\Commands\Agents\TicTacToe\TicTacToeLogic;
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
+use Illuminate\Console\Command;
+use Laravel\Ai\Enums\Lab;
+
+use function Laravel\Prompts\intro;
+
+#[Signature('play:tic-tac-toe {provider? : AIプロバイダー (例 openai, ollama)} {model? : AIモデル名 (例 gpt-5.6-luna, gemma3:1b)}')]
+#[Description('AI対戦３並べをプレイします。')]
+class TicTacToeCommand extends Command
+{
+    public function handle()
+    {
+        $logic = new TicTacToeLogic($this->getProvider(), $this->getModel());
+        intro('AI対戦' . $logic->n . '目並べ');
+        $logic->initializeBoard();
+        $logic->decideWhoGoesFirst();
+        $playersCount = count($logic->players);
+        $turn = 0;
+        while (! $logic->isGameOver) {
+            $i = $turn % $playersCount;
+            $turn++;
+            $currentPlayer = $logic->players[$i];
+            echo $logic->getBoard() . PHP_EOL;
+            $logic->decideCell($currentPlayer, $turn);
+            $result = $logic->checkResult($currentPlayer);
+            if ($result !== "") {
+                echo $logic->getBoard() . PHP_EOL;
+                echo $result . PHP_EOL;
+            }
+        }
+    }
+
+    protected function getProvider(): ?Lab
+    {
+        $provider = $this->argument('provider');
+        if (empty($provider)) {
+            return null;
+        }
+        $enum = Lab::tryFrom(strtolower($provider));
+        if ($enum === null) {
+            throw new \InvalidArgumentException("Unsupported provider: $provider");
+        }
+        return $enum;
+    }
+
+    protected function getModel(): ?string
+    {
+        return $this->argument('model');
+    }
+}
