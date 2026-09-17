@@ -1,3 +1,7 @@
+@if (!empty($error))
+**エラー**: {{ $error }}
+
+@endif
 ## 現在のボードの状況
 
 {!! $board !!}
@@ -6,12 +10,12 @@
 - {{ $player->getSymbol() }}: {{ $player->getName() }} （{{ $player->getType()->value }}）
 @endforeach
 
-## 選択可能なセル
+## 選択可能なセル [行, 列]
 
 @foreach ($availableCells as $cell)
-- {{ $cell[0] + 1 }}行 {{ $cell[1] + 1 }}列
+- [{{ $cell[0] + 1 }}, {{ $cell[1] + 1 }}]
 @endforeach
 
-## 次の一手を選んでください。
+## あなたのすること
 
-次の一手の行番号と列番号を答えてください。
+次の一手のセルを選択可能なセルから選択してください。
