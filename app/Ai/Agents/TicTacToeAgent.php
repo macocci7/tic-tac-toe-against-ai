@@ -22,6 +22,8 @@ class TicTacToeAgent implements Agent, Conversational, HasTools, HasStructuredOu
 
     protected string $instructions;
 
+    protected array $availableCells = [];
+
     /**
      * Get the instructions that the agent should follow.
      */
@@ -63,9 +65,26 @@ class TicTacToeAgent implements Agent, Conversational, HasTools, HasStructuredOu
      */
     public function schema(JsonSchema $schema): array
     {
+        //return [
+        //    'row' => $schema->integer()->description('The row index of the cell.')->required(),
+        //    'col' => $schema->integer()->description('The column index of the cell.')->required(),
+        //];
         return [
-            'row' => $schema->integer()->description('The row index of the cell.')->required(),
-            'col' => $schema->integer()->description('The column index of the cell.')->required(),
+            'cell' => $schema->string()
+                ->enum($this->getCellPositionsForSchemaEnum())
+                ->description('Select the position of the cell on the Tic Tac Toe board, [row, col].')
+                ->required(),
         ];
+    }
+
+    public function getCellPositionsForSchemaEnum(): array
+    {
+        return array_map(fn($c) => "[" . $c[0] . ", " . $c[1] . "]", $this->availableCells);
+    }
+
+    public function setAvailableCells(array $availableCells): self
+    {
+        $this->availableCells = $availableCells;
+        return $this;
     }
 }

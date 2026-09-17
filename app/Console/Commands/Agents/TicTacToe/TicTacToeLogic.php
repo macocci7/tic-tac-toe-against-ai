@@ -6,7 +6,7 @@ use App\Ai\Agents\TicTacToeAgent;
 use App\Enums\TicTacToe\PlayerTypeEnum;
 use Laravel\Ai\Enums\Lab;
 
-use function Laravel\Prompts\{spin, text, select};
+use function Laravel\Prompts\{spin, text, select, error};
 
 class TicTacToeLogic
 {
@@ -74,8 +74,56 @@ class TicTacToeLogic
 
     public function aiDecidesCell(Player $currentPlayer, int $turn): void {
         echo "ターン {$turn}、" . $currentPlayer->getName() . "の番です。" . PHP_EOL;
-        $choice = spin(
+        $availableCells = $this->getAvailableCells();
+        $error = "";
+        $maxAttempts = 3;
+        $i = 0;
+        while (true) {
+            if ($i >= $maxAttempts) {
+                error("これ以上の再試行は無駄なので終了します。残念です😭");
+                exit;
+            }
+            $i++;
+            $choice = $this->getAisChoice($error);
+            if (empty($choice)) {
+                $error = "AIがセルを選択できませんでした。選び直してください。";
+                error($error);
+                continue;
+            }
+            $cell = json_decode(json_decode($choice, true)["cell"] ?? "[]", true);
+            if(empty($cell)) {
+                $error = "AIがセルを選択できませんでした。選び直してください。";
+                error($error);
+                continue;
+            }
+            if (! $this->isValidCellRange(...$cell)) {
+                $error = "AIが選択したセル[" . $cell[0] . ", " . $cell[1] . "]は範囲外です。選びなおしてください。";
+                error($error);
+                continue;
+            }
+            $who = $this->whoChoseCell(...$cell);
+            if (is_null($who)) {
+                error("AIが選択したセル[" . $cell[0] . ", " . $cell[1] . "]の情報を取得できませんでした。処理を中止します🚫");
+                exit;
+            }
+            if ($who !== $this->initialValue) {
+                $error = "AIが選択したセル[" . $cell[0] . ", " . $cell[1] . "]は既に" . $who->getName() . "が選択済なので選べません。選びなおしてください。";
+                error($error);
+                continue;
+            }
+            break;
+        }
+
+        echo "AIが選んだセル: " . $cell[0] . "行 " . $cell[1] . "列" . PHP_EOL;
+        [$rowIndex, $colIndex] = [$cell[0] - 1, $cell[1] - 1];
+        $this->board[$rowIndex][$colIndex] = $currentPlayer;
+    }
+
+    protected function getAisChoice(string $error = ""): string {
+        $availableCells = $this->getAvailableCells();
+        return spin(
             callback: fn () => (new TicTacToeAgent)
+                ->setAvailableCells($availableCells)
                 ->setInstructions(view('tic-tac-toe.instructions.choose', [
                     'n' => $this->n,
                     'ai' => array_values(array_filter($this->players, fn($p) => $p->getType() === PlayerTypeEnum::AI))[0],
@@ -83,16 +131,14 @@ class TicTacToeLogic
                 ->prompt(view('tic-tac-toe.prompts.choose', [
                         'board' => $this->getBoard(),
                         'players' => $this->players,
-                        'availableCells' => $this->getAvailableCells(),
+                        'availableCells' => $availableCells,
+                        'error' => $error,
                     ]),
                     provider: $this->provider,
                     model: $this->model
                 ),
             message: "考え中・・・",
         );
-        echo "AIが選んだセル: 行 " . $choice['row'] . " 列 " . $choice['col'] . PHP_EOL;
-        [$rowIndex, $colIndex] = [$choice['row'] - 1, $choice['col'] - 1];
-        $this->board[$rowIndex][$colIndex] = $currentPlayer;
     }
 
     public function getAvailableCells(): array {
@@ -105,6 +151,18 @@ class TicTacToeLogic
             }
         }
         return $availableCells;
+    }
+
+    protected function isValidCellRange(int $row, int $col): bool {
+        $rowIndex = $row - 1;
+        $colIndex = $col - 1;
+        return isset($this->board[$rowIndex][$colIndex]);
+    }
+
+    protected function whoChoseCell(int $row, int $col): ?Player {
+        $rowIndex = $row - 1;
+        $colIndex = $col - 1;
+        return $this->board[$rowIndex][$colIndex] ?? null;
     }
 
     public function checkResult(Player $currentPlayer): string {
