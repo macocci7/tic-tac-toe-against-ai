@@ -79,7 +79,10 @@ class TicTacToeAgent implements Agent, Conversational, HasTools, HasStructuredOu
 
     public function getCellPositionsForSchemaEnum(): array
     {
-        return array_map(fn($c) => "[" . $c[0] . ", " . $c[1] . "]", $this->availableCells);
+        return array_map(
+            fn($c) => "[" . ($c[0] + 1) . ", " . ($c[1] + 1) . "]",
+            $this->availableCells
+        );
     }
 
     public function setAvailableCells(array $availableCells): self

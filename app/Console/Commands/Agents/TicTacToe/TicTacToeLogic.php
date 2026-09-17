@@ -127,6 +127,7 @@ class TicTacToeLogic
                 ->setInstructions(view('tic-tac-toe.instructions.choose', [
                     'n' => $this->n,
                     'ai' => array_values(array_filter($this->players, fn($p) => $p->getType() === PlayerTypeEnum::AI))[0],
+                    'human' => array_values(array_filter($this->players, fn($p) => $p->getType() === PlayerTypeEnum::HUMAN))[0],
                 ]))
                 ->prompt(view('tic-tac-toe.prompts.choose', [
                         'board' => $this->getBoard(),
