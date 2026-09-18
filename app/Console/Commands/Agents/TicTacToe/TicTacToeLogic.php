@@ -45,9 +45,14 @@ class TicTacToeLogic
 
     public function setPlayers(): void {
         $name = text(
-            'あなたのお名前は何ですか？',
-            required: "お名前教えてくださいよ",
+            label: 'あなたのお名前は何ですか？',
+            //required: "お名前教えてくださいよ",
+            //hint: '最大10文字',
+            //validate: fn($value) => mb_strlen($value) <= 10 ? null : '最大10文字までです',
         );
+        if (empty($name)) {
+            $name = '名無し＠通りすがり';
+        }
         echo view('tic-tac-toe.messages.welcome', ['name' => $name])->render() . PHP_EOL . PHP_EOL;
         $playerSymbol = select(
             label: "あなたの記号を選んでください",
