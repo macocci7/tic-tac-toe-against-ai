@@ -21,11 +21,20 @@ class TicTacToeLogic
     public string $cellSeparatorCross = '＋';
     public string $cellSeparatorRow = '';
     public bool $isGameOver = false;
+    public int $playCount = 0;
+    public int $yourWins = 0;
+    public int $draws = 0;
 
     public function __construct(
         protected ?Lab $provider,
         protected ?string $model,
     ) {
+    }
+
+    public function initialize(): void {
+        $this->playCount++;
+        $this->isGameOver = false;
+        $this->initializeBoard();
     }
 
     public function initializeBoard(): void {
@@ -34,13 +43,32 @@ class TicTacToeLogic
         $this->cellSeparatorRow = implode($this->cellSeparatorCross, array_fill(0, $this->xMax, $this->cellSeparatorY));
     }
 
-    public function decideWhoGoesFirst(): void {
-        $name = text('あなたのお名前は何ですか？');
+    public function setPlayers(): void {
+        $name = text(
+            label: 'あなたのお名前は何ですか？',
+            //required: "お名前教えてくださいよ",
+            //hint: '最大10文字',
+            //validate: fn($value) => mb_strlen($value) <= 10 ? null : '最大10文字までです',
+        );
+        if (empty($name)) {
+            $name = '名無し＠通りすがり';
+        }
         echo view('tic-tac-toe.messages.welcome', ['name' => $name])->render() . PHP_EOL . PHP_EOL;
+        $playerSymbol = select(
+            label: "あなたの記号を選んでください",
+            options: config('tic-tac-toe.symbols.human'),
+        );
+        $aiSymbols = config('tic-tac-toe.symbols.ai');
+        $aiSymbol = $aiSymbols[array_rand($aiSymbols)];
+        $this->players = [
+            new Player(type: PlayerTypeEnum::HUMAN, name: $name, symbol: $playerSymbol),
+            new Player(type: PlayerTypeEnum::AI, name: 'AI', symbol: $aiSymbol),
+        ];
+    }
+
+    public function decideWhoGoesFirst(): void {
         echo "先行・後攻を適当に決めます。" . PHP_EOL;
-        $player = new Player(type: PlayerTypeEnum::HUMAN, name: $name, symbol: '😊');
-        $ai = new Player(type: PlayerTypeEnum::AI, name: 'AI', symbol: '🤖');
-        $this->players = rand(0, 1) === 0 ? [$player, $ai] : [$ai, $player];
+        shuffle($this->players);
     }
 
     public function getBoard(): string {
@@ -171,35 +199,62 @@ class TicTacToeLogic
         foreach ($this->board as $rowIndex => $row) {
             if (count(array_unique(array_map(fn($c) => $c->getName(), $row))) === 1 && $row[0] === $currentPlayer) {
                 $this->isGameOver = true;
-                return $currentPlayer->getName() . "が勝ちました。";
+                if ($currentPlayer->getType() === PlayerTypeEnum::HUMAN) {
+                    $this->yourWins++;
+                }
+                return $currentPlayer->getName() . "が勝ちました✨🎉🎊";
             }
         }
         // 縦方向の勝利条件をチェック
         for ($colIndex = 0; $colIndex < $this->xMax; $colIndex++) {
             $column = array_column($this->board, $colIndex);
             if (count(array_unique(array_map(fn($c) => $c->getName(), $column))) === 1 && $column[0] === $currentPlayer) {
+                if ($currentPlayer->getType() === PlayerTypeEnum::HUMAN) {
+                    $this->yourWins++;
+                }
                 $this->isGameOver = true;
-                return $currentPlayer->getName() . "が勝ちました。";
+                return $currentPlayer->getName() . "が勝ちました✨🎉🎊";
             }
         }
         // 斜め方向の勝利条件をチェック（左上から右下）
         $diagonal1 = array_map(fn($i) => $this->board[$i][$i], range(0, $this->xMax - 1));
         if (count(array_unique(array_map(fn($c) => $c->getName(), $diagonal1))) === 1 && $diagonal1[0] === $currentPlayer) {
+            if ($currentPlayer->getType() === PlayerTypeEnum::HUMAN) {
+                $this->yourWins++;
+            }
             $this->isGameOver = true;
-            return $currentPlayer->getName() . "が勝ちました。";
+            return $currentPlayer->getName() . "が勝ちました✨🎉🎊";
         }
         // 斜め方向の勝利条件をチェック（右上から左下）
         $diagonal2 = array_map(fn($i) => $this->board[$i][$this->xMax - 1 - $i], range(0, $this->xMax - 1));
         if (count(array_unique(array_map(fn($c) => $c->getName(), $diagonal2))) === 1 && $diagonal2[0] === $currentPlayer) {
+            if ($currentPlayer->getType() === PlayerTypeEnum::HUMAN) {
+                $this->yourWins++;
+            }
             $this->isGameOver = true;
-            return $currentPlayer->getName() . "が勝ちました。";
+            return $currentPlayer->getName() . "が勝ちました✨🎉🎊";
         }
         // ボードが埋まっているかをチェック
         $availableCells = $this->getAvailableCells();
         if (empty($availableCells)) {
             $this->isGameOver = true;
+            $this->draws++;
             return "引き分けです。";
         }
         return "";
+    }
+
+    public function willYouContinue(): bool {
+        $answer = readline("続けますか？ (y/n): ");
+        return strtolower($answer) === 'y';
+    }
+
+    public function displayResults(): void {
+        echo "- プレイ回数: " . $this->playCount . PHP_EOL;
+        echo "- あなたの勝利回数: " . $this->yourWins . PHP_EOL;
+        echo "- 引き分け回数: " . $this->draws . PHP_EOL;
+        echo "- AIの勝利回数: " . ($this->playCount - $this->yourWins - $this->draws) . PHP_EOL;
+        echo "- あなたの勝率: " . ($this->playCount > 0 ? ($this->yourWins / $this->playCount) * 100 : 0) . "%" . PHP_EOL;
+        echo "- AIの勝率: " . ($this->playCount > 0 ? (($this->playCount - $this->yourWins - $this->draws) / $this->playCount) * 100 : 0) . "%" . PHP_EOL;
     }
 }

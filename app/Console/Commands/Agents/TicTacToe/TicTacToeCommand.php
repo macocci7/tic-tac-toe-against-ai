@@ -18,22 +18,15 @@ class TicTacToeCommand extends Command
     {
         $logic = new TicTacToeLogic($this->getProvider(), $this->getModel());
         intro('AI対戦' . $logic->n . '目並べ');
-        $logic->initializeBoard();
-        $logic->decideWhoGoesFirst();
-        $playersCount = count($logic->players);
-        $turn = 0;
-        while (! $logic->isGameOver) {
-            $i = $turn % $playersCount;
-            $turn++;
-            $currentPlayer = $logic->players[$i];
-            echo $logic->getBoard() . PHP_EOL;
-            $logic->decideCell($currentPlayer, $turn);
-            $result = $logic->checkResult($currentPlayer);
-            if ($result !== "") {
-                echo $logic->getBoard() . PHP_EOL;
-                echo $result . PHP_EOL;
+        $logic->setPlayers();
+        while (true) {
+            $this->play($logic);
+            if (! $logic->willYouContinue()) {
+                break;
             }
         }
+        echo "ゲームを終了します。お疲れ様でした。" . PHP_EOL;
+        $logic->displayResults();
     }
 
     protected function getProvider(): ?Lab
@@ -52,5 +45,25 @@ class TicTacToeCommand extends Command
     protected function getModel(): ?string
     {
         return $this->argument('model');
+    }
+
+    protected function play(TicTacToeLogic $logic): void
+    {
+        $logic->initialize();
+        $logic->decideWhoGoesFirst();
+        $playersCount = count($logic->players);
+        $turn = 0;
+        while (! $logic->isGameOver) {
+            $i = $turn % $playersCount;
+            $turn++;
+            $currentPlayer = $logic->players[$i];
+            echo $logic->getBoard() . PHP_EOL;
+            $logic->decideCell($currentPlayer, $turn);
+            $result = $logic->checkResult($currentPlayer);
+            if ($result !== "") {
+                echo $logic->getBoard() . PHP_EOL;
+                echo $result . PHP_EOL;
+            }
+        }
     }
 }
