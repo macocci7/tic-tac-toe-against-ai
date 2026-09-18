@@ -17,9 +17,15 @@ Laravel(13) AI SDKで作りました。
 
 このリポジトリを何らかの手段でローカルにコピーしてください。
 
+▼Gitが使える場合
 ```bash
 git clone https://github.com/macocci7/tic-tac-toe-against-ai.git
 ```
+
+▼Gitが使えない場合
+- https://github.com/macocci7/tic-tac-toe-against-ai を開く。
+- 画面上部緑色の「Code」ボタンから「Download ZIP」を選択。
+- ダウンロードしたZIPを展開。
 
 ローカルにコピーしたリポジトリのフォルダに入ります。
 
