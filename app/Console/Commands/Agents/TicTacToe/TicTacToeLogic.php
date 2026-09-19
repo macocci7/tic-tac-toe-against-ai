@@ -29,6 +29,7 @@ class TicTacToeLogic
     public function __construct(
         protected ?Lab $provider,
         protected ?string $model,
+        protected ?bool $noConversation = false,
     ) {
     }
 
@@ -100,13 +101,15 @@ class TicTacToeLogic
         );
         $chosenIndex = array_search($choice, $options);
         [$rowIndex, $colIndex] = $availableCells[$chosenIndex];
-        $this->userComment = text(
-            label: "相手へのコメントをどうぞ",
-            placeholder: "これでどうよ！？",
-            hint: "100文字以内",
-            default: $this->userComment,
-            validate: fn($val) => mb_strlen($val) <= 100 ? null : "100文字以内で入力してください",
-        ) ?? "";
+        if (! $this->noConversation) {
+            $this->userComment = text(
+                label: "相手へのコメントをどうぞ",
+                placeholder: "これでどうよ！？",
+                hint: "100文字以内",
+                default: $this->userComment,
+                validate: fn($val) => mb_strlen($val) <= 100 ? null : "100文字以内で入力してください",
+            ) ?? "";
+        }
         $this->board->setCell($rowIndex, $colIndex, $currentPlayer, $this->userComment);
     }
 
@@ -161,10 +164,12 @@ class TicTacToeLogic
 
         Colorizer::attributes(["bold"])->background("#0000aa")->foreground("#ffffff")->echo(" AIが選んだセル ");
         echo " " . $cell[0] . "行 " . $cell[1] . "列" . PHP_EOL;
-        Colorizer::attributes(["bold"])->background("#ffff00")->foreground("#0000ff")->echo(" AIのコメント　 ");
-        echo " " . $comment . PHP_EOL;
+        if (! $this->noConversation) {
+            Colorizer::attributes(["bold"])->background("#ffff00")->foreground("#0000ff")->echo(" AIのコメント　 ");
+            echo " " . $comment . PHP_EOL;
+        }
         [$rowIndex, $colIndex] = [$cell[0] - 1, $cell[1] - 1];
-        $this->board->setCell($rowIndex, $colIndex, $currentPlayer, $comment);
+        $this->board->setCell($rowIndex, $colIndex, $currentPlayer, $this->noConversation ? "" : $comment);
     }
 
     /**
@@ -173,7 +178,7 @@ class TicTacToeLogic
     protected function getAisChoice(string $error = ""): string {
         $availableCells = $this->board->getAvailableCells();
         return spin(
-            callback: fn () => (new TicTacToeAgent)
+            callback: fn () => (new TicTacToeAgent($this->noConversation))
                 ->setAvailableCells($availableCells)
                 ->setInstructions(view('tic-tac-toe.instructions.choose', [
                     'n' => $this->n,
@@ -274,7 +279,9 @@ class TicTacToeLogic
             $this->decideCell($currentPlayer, $turn);
             $this->checkResult($currentPlayer);
         }
-        $this->getComments();
+        if (! $this->noConversation) {
+            $this->getComments();
+        }
     }
 
     /**

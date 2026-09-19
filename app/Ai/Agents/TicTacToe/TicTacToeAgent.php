@@ -24,6 +24,11 @@ class TicTacToeAgent implements Agent, Conversational, HasTools, HasStructuredOu
 
     protected array $availableCells = [];
 
+    public function __construct(
+        protected bool $noConversation = false,
+    ) {
+    }
+
     /**
      * Get the instructions that the agent should follow.
      */
@@ -68,18 +73,21 @@ class TicTacToeAgent implements Agent, Conversational, HasTools, HasStructuredOu
      */
     public function schema(JsonSchema $schema): array
     {
-        return [
+        $returnArray = [
             // 選択可能なセル座標を列挙
             'cell' => $schema->string()
                 ->enum($this->getCellPositionsForSchemaEnum())
                 ->description('Select the position of the cell on the Tic Tac Toe board, [row, col].')
                 ->required(),
-            'comment' => $schema->string()
+        ];
+        if (! $this->noConversation) {
+            $returnArray['comment'] = $schema->string()
                 ->description('対戦相手に対するコメント。心理的駆け引きを踏まえて記入してください。謎めいててもいいし、挑発してもいいし、ユーモアを交えても構いません。')
                 ->min(5)
                 ->max(100)
-                ->required(),
-        ];
+                ->required();
+        }
+        return $returnArray;
     }
 
     /**

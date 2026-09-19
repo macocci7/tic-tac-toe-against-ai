@@ -60,6 +60,7 @@ php artisan play:tic-tac-toe [プロバイダー名] [モデル名]
 php artisan play:tic-tac-toe
 php artisan play:tic-tac-toe openai
 php artisan play:tic-tac-toe ollama gemma3:1b
+php artisan play:tic-tac-toe --no-conversation
 ```
 プロバイダー名とモデル名を省略した場合、`.env`内のAPIキーが設定されているプロバイダーが選択されます。
 
@@ -68,6 +69,8 @@ php artisan play:tic-tac-toe ollama gemma3:1b
 ollamaの場合はモデル名を指定しないとエラーになります。
 
 該当するプロバイダー、該当するモデルが無い場合はエラーになります。
+
+`--no-conversation`オプションを付けることでチャットをオフにできます。
 
 ## アップデートの仕方
 

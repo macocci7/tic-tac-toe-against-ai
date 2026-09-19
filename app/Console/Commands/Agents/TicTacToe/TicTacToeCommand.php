@@ -10,13 +10,20 @@ use Laravel\Ai\Enums\Lab;
 
 use function Laravel\Prompts\{intro, confirm};
 
-#[Signature('play:tic-tac-toe {provider? : AIプロバイダー (例 openai, ollama)} {model? : AIモデル名 (例 gpt-5.6-luna, gemma3:1b)}')]
+#[Signature('play:tic-tac-toe
+     {provider? : AIプロバイダー (例 openai, ollama)}
+     {model? : AIモデル名 (例 gpt-5.6-luna, gemma3:1b)}
+     {--no-conversation : 対話を無効にする}')]
 #[Description('AI対戦３並べをプレイします。')]
 class TicTacToeCommand extends Command
 {
     public function handle()
     {
-        $logic = new TicTacToeLogic($this->getProvider(), $this->getModel());
+        $logic = new TicTacToeLogic(
+            $this->getProvider(),
+            $this->getModel(),
+            $this->getNoConversation(),
+        );
         intro('AI対戦' . $logic->n . '目並べ');
         $logic->setPlayers();
         while (true) {
@@ -51,5 +58,13 @@ class TicTacToeCommand extends Command
     protected function getModel(): ?string
     {
         return $this->argument('model');
+    }
+
+    /**
+     * コマンドライン引数から対話モードの設定を取得
+     */
+    protected function getNoConversation(): bool
+    {
+        return $this->option('no-conversation');
     }
 }
