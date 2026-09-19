@@ -4,6 +4,9 @@ namespace App\Console\Commands\Agents\TicTacToe;
 
 use App\Enums\TicTacToe\PlayerTypeEnum;
 
+/**
+ * プレイヤー定義クラス
+ */
 class Player
 {
     public function __construct(

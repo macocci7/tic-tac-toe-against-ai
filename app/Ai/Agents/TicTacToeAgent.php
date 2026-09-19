@@ -32,6 +32,9 @@ class TicTacToeAgent implements Agent, Conversational, HasTools, HasStructuredOu
         return $this->instructions;
     }
 
+    /**
+     * システム指示を設定
+     */
     public function setInstructions(string $instructions): self
     {
         $this->instructions = $instructions;
@@ -65,11 +68,8 @@ class TicTacToeAgent implements Agent, Conversational, HasTools, HasStructuredOu
      */
     public function schema(JsonSchema $schema): array
     {
-        //return [
-        //    'row' => $schema->integer()->description('The row index of the cell.')->required(),
-        //    'col' => $schema->integer()->description('The column index of the cell.')->required(),
-        //];
         return [
+            // 選択可能なセル座標を列挙
             'cell' => $schema->string()
                 ->enum($this->getCellPositionsForSchemaEnum())
                 ->description('Select the position of the cell on the Tic Tac Toe board, [row, col].')
@@ -77,6 +77,9 @@ class TicTacToeAgent implements Agent, Conversational, HasTools, HasStructuredOu
         ];
     }
 
+    /**
+     * 選択可能なセル座標を'[row, col]'形式の文字列値として配列で返す
+     */
     public function getCellPositionsForSchemaEnum(): array
     {
         return array_map(
@@ -85,6 +88,9 @@ class TicTacToeAgent implements Agent, Conversational, HasTools, HasStructuredOu
         );
     }
 
+    /**
+     * 選択可能なセル座標を設定
+     */
     public function setAvailableCells(array $availableCells): self
     {
         $this->availableCells = $availableCells;
