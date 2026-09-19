@@ -44,12 +44,7 @@ class TicTacToeLogic
     }
 
     public function setPlayers(): void {
-        $name = text(
-            label: 'あなたのお名前は何ですか？',
-            //required: "お名前教えてくださいよ",
-            //hint: '最大10文字',
-            //validate: fn($value) => mb_strlen($value) <= 10 ? null : '最大10文字までです',
-        );
+        $name = text('あなたのお名前は何ですか？');
         if (empty($name)) {
             $name = '名無し＠通りすがり';
         }
@@ -256,5 +251,25 @@ class TicTacToeLogic
         echo "- AIの勝利回数: " . ($this->playCount - $this->yourWins - $this->draws) . PHP_EOL;
         echo "- あなたの勝率: " . ($this->playCount > 0 ? ($this->yourWins / $this->playCount) * 100 : 0) . "%" . PHP_EOL;
         echo "- AIの勝率: " . ($this->playCount > 0 ? (($this->playCount - $this->yourWins - $this->draws) / $this->playCount) * 100 : 0) . "%" . PHP_EOL;
+    }
+
+    public function play(): void
+    {
+        $this->initialize();
+        $this->decideWhoGoesFirst();
+        $playersCount = count($this->players);
+        $turn = 0;
+        while (! $this->isGameOver) {
+            $i = $turn % $playersCount;
+            $turn++;
+            $currentPlayer = $this->players[$i];
+            echo $this->getBoard() . PHP_EOL;
+            $this->decideCell($currentPlayer, $turn);
+            $result = $this->checkResult($currentPlayer);
+            if ($result !== "") {
+                echo $this->getBoard() . PHP_EOL;
+                echo $result . PHP_EOL;
+            }
+        }
     }
 }

@@ -20,7 +20,7 @@ class TicTacToeCommand extends Command
         intro('AI対戦' . $logic->n . '目並べ');
         $logic->setPlayers();
         while (true) {
-            $this->play($logic);
+            $logic->play();
             if (! $logic->willYouContinue()) {
                 break;
             }
@@ -45,25 +45,5 @@ class TicTacToeCommand extends Command
     protected function getModel(): ?string
     {
         return $this->argument('model');
-    }
-
-    protected function play(TicTacToeLogic $logic): void
-    {
-        $logic->initialize();
-        $logic->decideWhoGoesFirst();
-        $playersCount = count($logic->players);
-        $turn = 0;
-        while (! $logic->isGameOver) {
-            $i = $turn % $playersCount;
-            $turn++;
-            $currentPlayer = $logic->players[$i];
-            echo $logic->getBoard() . PHP_EOL;
-            $logic->decideCell($currentPlayer, $turn);
-            $result = $logic->checkResult($currentPlayer);
-            if ($result !== "") {
-                echo $logic->getBoard() . PHP_EOL;
-                echo $result . PHP_EOL;
-            }
-        }
     }
 }
