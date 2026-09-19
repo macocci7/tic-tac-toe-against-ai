@@ -4,7 +4,7 @@ AI対戦３並べのCLI版です。
 
 Laravel(13) AI SDKで作りました。
 
-<img src="tic-tac-toe-against-ai.png" title="AI対戦３並べ" width="600" />
+<img src="tic-tac-toe-against-ai-20260919.png" title="AI対戦３並べ" width="600" />
 
 ## 前提
 - 対応言語：日本語

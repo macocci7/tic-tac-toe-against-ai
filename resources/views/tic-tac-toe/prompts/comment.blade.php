@@ -15,6 +15,8 @@
 
 {{ $history['board'] }}
 
+- {{ $history['player']->getName() }}のコメント: {{ $history['comment'] }}
+
 @endforeach
 
 ## 対戦結果
