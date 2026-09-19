@@ -8,7 +8,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Laravel\Ai\Enums\Lab;
 
-use function Laravel\Prompts\intro;
+use function Laravel\Prompts\{intro, confirm};
 
 #[Signature('play:tic-tac-toe {provider? : AIプロバイダー (例 openai, ollama)} {model? : AIモデル名 (例 gpt-5.6-luna, gemma3:1b)}')]
 #[Description('AI対戦３並べをプレイします。')]
@@ -21,7 +21,7 @@ class TicTacToeCommand extends Command
         $logic->setPlayers();
         while (true) {
             $logic->play();
-            if (! $logic->willYouContinue()) {
+            if (! confirm("続けますか？")) {
                 break;
             }
         }
@@ -29,6 +29,9 @@ class TicTacToeCommand extends Command
         $logic->displayResults();
     }
 
+    /**
+     * コマンドライン引数からAIプロバイダーを取得
+     */
     protected function getProvider(): ?Lab
     {
         $provider = $this->argument('provider');
@@ -42,6 +45,9 @@ class TicTacToeCommand extends Command
         return $enum;
     }
 
+    /**
+     * コマンドライン引数からAIモデル名を取得
+     */
     protected function getModel(): ?string
     {
         return $this->argument('model');
