@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Ai\Agents;
+namespace App\Ai\Agents\TicTacToe;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\UseCheapestModel;
@@ -73,6 +73,11 @@ class TicTacToeAgent implements Agent, Conversational, HasTools, HasStructuredOu
             'cell' => $schema->string()
                 ->enum($this->getCellPositionsForSchemaEnum())
                 ->description('Select the position of the cell on the Tic Tac Toe board, [row, col].')
+                ->required(),
+            'comment' => $schema->string()
+                ->description('対戦相手に対するコメント。心理的駆け引きを踏まえて記入してください。謎めいててもいいし、挑発してもいいし、ユーモアを交えても構いません。')
+                ->min(5)
+                ->max(100)
                 ->required(),
         ];
     }

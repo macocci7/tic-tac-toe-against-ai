@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b383b6a2eae51050cdacfe0413065f88",
+    "content-hash": "5cfdfe31dbdaa6fe219e6e1db36acb51",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -2264,6 +2264,49 @@
                 }
             ],
             "time": "2026-03-08T20:05:35+00:00"
+        },
+        {
+            "name": "macocci7/bash-colorizer",
+            "version": "v0.1.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/macocci7/BashColorizer.git",
+                "reference": "bec3710bcf1cefc18b3620d5dff3716ac0a1d2bc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/macocci7/BashColorizer/zipball/bec3710bcf1cefc18b3620d5dff3716ac0a1d2bc",
+                "reference": "bec3710bcf1cefc18b3620d5dff3716ac0a1d2bc",
+                "shasum": ""
+            },
+            "require-dev": {
+                "php-parallel-lint/php-parallel-lint": "^1.4",
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^10.5",
+                "squizlabs/php_codesniffer": "^4"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Macocci7\\BashColorizer\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "macocci7",
+                    "email": "macocci7@yahoo.co.jp"
+                }
+            ],
+            "description": "Let's make your bash terminal full of colors!",
+            "support": {
+                "issues": "https://github.com/macocci7/BashColorizer/issues",
+                "source": "https://github.com/macocci7/BashColorizer/tree/v0.1.2"
+            },
+            "time": "2025-11-21T05:38:04+00:00"
         },
         {
             "name": "monolog/monolog",

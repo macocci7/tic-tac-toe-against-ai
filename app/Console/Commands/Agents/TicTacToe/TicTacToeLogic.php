@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands\Agents\TicTacToe;
 
-use App\Ai\Agents\TicTacToeAgent;
+use App\Ai\Agents\TicTacToe\TicTacToeAgent;
+use App\Ai\Agents\TicTacToe\TicTacToeCommentAgent;
 use App\Enums\TicTacToe\PlayerTypeEnum;
 use Laravel\Ai\Enums\Lab;
+use Macocci7\BashColorizer\Colorizer;
 
 use function Laravel\Prompts\{spin, text, select, error};
 
@@ -20,6 +22,9 @@ class TicTacToeLogic
     public int $playCount = 0;
     public int $yourWins = 0;
     public int $draws = 0;
+    protected string $userComment = "";
+    protected array $histories = [];
+    protected string $resultText = "";
 
     public function __construct(
         protected ?Lab $provider,
@@ -54,6 +59,8 @@ class TicTacToeLogic
     public function initializeGame(): void {
         $this->playCount++;
         $this->isGameOver = false;
+        $this->userComment = "";
+        $this->histories = [];
         $this->board = new Board(n: $this->n, xMax: $this->xMax, yMax: $this->yMax);
     }
 
@@ -61,8 +68,13 @@ class TicTacToeLogic
      * 先攻後攻決定
      */
     public function decideWhoGoesFirst(): void {
-        echo "先行・後攻を適当に決めます。" . PHP_EOL;
+        Colorizer::background("default")->foreground("#00aa00")
+            ->echo("先行・後攻を適当に決めます。", PHP_EOL);
         shuffle($this->players);
+        foreach($this->players as $index => $player) {
+            Colorizer::foreground("#00aa00")
+                ->echo(($index === 0 ? "先攻" : "後攻") . ": " . $player->getName(), PHP_EOL);
+        }
     }
 
     /**
@@ -70,7 +82,7 @@ class TicTacToeLogic
      */
     public function decideCell(Player $currentPlayer, int $turn): void {
         match ($currentPlayer->getType()) {
-            PlayerTypeEnum::HUMAN => $this->playerDecidesCell($currentPlayer, $turn),
+            PlayerTypeEnum::HUMAN => $this->humanDecidesCell($currentPlayer, $turn),
             PlayerTypeEnum::AI => $this->aiDecidesCell($currentPlayer, $turn),
         };
     }
@@ -78,7 +90,7 @@ class TicTacToeLogic
     /**
      * 人間プレイヤーのセル選択
      */
-    public function playerDecidesCell(Player $currentPlayer, int $turn): void {
+    public function humanDecidesCell(Player $currentPlayer, int $turn): void {
         $availableCells = $this->board->getAvailableCells();
         $options = array_map(fn($c) => ($c[0] + 1) . '行 ' . ($c[1] + 1) . '列', $availableCells);
         $choice = select(
@@ -88,14 +100,23 @@ class TicTacToeLogic
         );
         $chosenIndex = array_search($choice, $options);
         [$rowIndex, $colIndex] = $availableCells[$chosenIndex];
-        $this->board->setCell($rowIndex, $colIndex, $currentPlayer);
+        $this->userComment = text(
+            label: "相手へのコメントをどうぞ",
+            placeholder: "これでどうよ！？",
+            hint: "100文字以内",
+            default: $this->userComment,
+            validate: fn($val) => mb_strlen($val) <= 100 ? null : "100文字以内で入力してください",
+        ) ?? "";
+        $this->board->setCell($rowIndex, $colIndex, $currentPlayer, $this->userComment);
     }
 
     /**
      * AIのセル選択
      */
     public function aiDecidesCell(Player $currentPlayer, int $turn): void {
-        echo "ターン {$turn}、" . $currentPlayer->getName() . "の番です。" . PHP_EOL;
+        Colorizer::background("default")
+            ->foreground("#00ffff")
+            ->echo("ターン {$turn}、" . $currentPlayer->getName() . "の番です。", PHP_EOL);
         $availableCells = $this->board->getAvailableCells();
         $error = "";
         $maxAttempts = 3;
@@ -112,7 +133,9 @@ class TicTacToeLogic
                 error($error);
                 continue;
             }
-            $cell = json_decode(json_decode($choice, true)["cell"] ?? "[]", true);
+            $choiceDecoded = json_decode($choice, true);
+            $comment = $choiceDecoded["comment"] ?? "(No comment)";
+            $cell = json_decode($choiceDecoded["cell"] ?? "[]", true);
             if(empty($cell)) {
                 $error = "AIがセルを選択できませんでした。選び直してください。";
                 error($error);
@@ -136,9 +159,12 @@ class TicTacToeLogic
             break;
         }
 
-        echo "AIが選んだセル: " . $cell[0] . "行 " . $cell[1] . "列" . PHP_EOL;
+        Colorizer::attributes(["bold"])->background("#0000aa")->foreground("#ffffff")->echo(" AIが選んだセル ");
+        echo " " . $cell[0] . "行 " . $cell[1] . "列" . PHP_EOL;
+        Colorizer::attributes(["bold"])->background("#ffff00")->foreground("#0000ff")->echo(" AIのコメント　 ");
+        echo " " . $comment . PHP_EOL;
         [$rowIndex, $colIndex] = [$cell[0] - 1, $cell[1] - 1];
-        $this->board->setCell($rowIndex, $colIndex, $currentPlayer);
+        $this->board->setCell($rowIndex, $colIndex, $currentPlayer, $comment);
     }
 
     /**
@@ -159,6 +185,7 @@ class TicTacToeLogic
                         'players' => $this->players,
                         'availableCells' => $availableCells,
                         'error' => $error,
+                        'userComment' => $this->userComment,
                     ]),
                     provider: $this->provider,
                     model: $this->model
@@ -176,17 +203,58 @@ class TicTacToeLogic
             return;
         }
         $this->isGameOver = true;
-        echo $this->board->getBoard() . PHP_EOL;
+        $this->displayBoard();
         if ($result->isWin()) {
             if ($currentPlayer->getType() === PlayerTypeEnum::HUMAN) {
                 $this->yourWins++;
             }
-            echo $currentPlayer->getName() . "が勝ちました✨🎉🎊" . PHP_EOL;
+            $this->resultText = $currentPlayer->getSymbol() . $currentPlayer->getName() . "が勝ちました✨🎉🎊";
+            echo $this->resultText . PHP_EOL;
         }
         if ($result->isDraw()) {
-            echo "引き分けです🤝" . PHP_EOL;
+            $this->resultText = "引き分けです🤝";
+            echo $this->resultText . PHP_EOL;
             $this->draws++;
         }
+    }
+
+    public function displayBoard(): void {
+        Colorizer::attributes(["bold"])
+            ->background("#996600")
+            ->foreground("#ffffff")
+            ->echo(" ボードの状況　 ", PHP_EOL);
+        echo $this->board->getBoard() . PHP_EOL;
+    }
+
+    public function getComments(): void {
+        $this->userComment = text(
+            label: "相手へのコメントをどうぞ",
+            hint: "100文字以内で入力してください",
+            validate: fn($val) => mb_strlen($val) <= 100 ? null : "100文字以内で入力してください",
+        );
+        $response = spin(
+            callback: fn () => (new TicTacToeCommentAgent)
+                ->setInstructions(view('tic-tac-toe.instructions.comment', [
+                    'n' => $this->n,
+                    'ai' => array_values(array_filter($this->players, fn($p) => $p->getType() === PlayerTypeEnum::AI))[0],
+                    'human' => array_values(array_filter($this->players, fn($p) => $p->getType() === PlayerTypeEnum::HUMAN))[0],
+                ]))
+                ->prompt(view('tic-tac-toe.prompts.comment', [
+                        'userComment' => $this->userComment,
+                        'players' => $this->players,
+                        'histories' => $this->board->getHistories(),
+                        'resultText' => $this->resultText,
+                    ]),
+                    provider: $this->provider,
+                    model: $this->model
+                ),
+            message: "考え中・・・",
+        );
+        Colorizer::attributes(["bold"])
+            ->background("#006600")
+            ->foreground("#ffffff")
+            ->echo(" AIのコメント ", PHP_EOL);
+        echo $response . PHP_EOL;
     }
 
     /**
@@ -202,16 +270,21 @@ class TicTacToeLogic
             $i = $turn % $playersCount;
             $turn++;
             $currentPlayer = $this->players[$i];
-            echo $this->board->getBoard() . PHP_EOL;
+            $this->displayBoard();
             $this->decideCell($currentPlayer, $turn);
             $this->checkResult($currentPlayer);
         }
+        $this->getComments();
     }
 
     /**
      * ゲームの結果を表示
      */
     public function displayResults(): void {
+        Colorizer::attributes(["bold"])
+            ->background("#00aa66")
+            ->foreground("#ffffff")
+            ->echo(" ゲーム結果 ", PHP_EOL);
         echo "- プレイ回数: " . $this->playCount . PHP_EOL;
         echo "- あなたの勝利回数: " . $this->yourWins . PHP_EOL;
         echo "- 引き分け回数: " . $this->draws . PHP_EOL;

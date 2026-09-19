@@ -1,5 +1,13 @@
 @if (!empty($error))
-**エラー**: {{ $error }}
+## エラー
+
+{{ $error }}
+
+@endif
+@if (!empty($userComment))
+## 対戦相手からのコメント
+
+{{ $userComment }}
 
 @endif
 ## 現在のボードの状況

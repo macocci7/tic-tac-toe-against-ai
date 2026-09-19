@@ -16,6 +16,7 @@ class Board
     public string $cellSeparatorCross = '＋';
     public string $cellSeparatorRow = '';
     protected array $board = [];
+    protected array $histories = [];
 
     public function __construct(
         public int $n = 3,      // {{ $n }}目並べ
@@ -29,6 +30,7 @@ class Board
         $this->initialValue = new Player(type: PlayerTypeEnum::NONE, name: '', symbol: '　');
         $this->board = array_fill(0, $this->yMax, array_fill(0, $this->xMax, $this->initialValue));
         $this->cellSeparatorRow = implode($this->cellSeparatorCross, array_fill(0, $this->xMax, $this->cellSeparatorY));
+        $this->histories = [];
     }
 
     /**
@@ -76,8 +78,9 @@ class Board
         return $this->board[$rowIndex][$colIndex] ?? null;
     }
 
-    public function setCell(int $rowIndex, int $colIndex, Player $player): void {
+    public function setCell(int $rowIndex, int $colIndex, Player $player, string $comment): void {
         $this->board[$rowIndex][$colIndex] = $player;
+        $this->setHistory($player, $rowIndex + 1, $colIndex + 1, $comment);
     }
 
     /**
@@ -113,5 +116,20 @@ class Board
             return new BoardResult(BoardResultEnum::DRAW);
         }
         return new BoardResult(BoardResultEnum::IN_GAME);
+    }
+
+    public function setHistory(Player $player, int $row, int $col, string $comment): void {
+        $this->histories[] = [
+            'player' => $player,
+            'row' => $row,
+            'col' => $col,
+            'cell' => '[' . $row . '行, ' . $col . '列]',
+            'comment' => $comment,
+            'board' => $this->getBoard(),
+        ];
+    }
+
+    public function getHistories(): array {
+        return $this->histories;
     }
 }
