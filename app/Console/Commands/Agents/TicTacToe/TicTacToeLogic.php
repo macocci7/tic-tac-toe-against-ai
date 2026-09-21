@@ -223,13 +223,12 @@ class TicTacToeLogic
                 $this->yourWins++;
             }
             $this->resultText = $currentPlayer->getSymbol() . $currentPlayer->getName() . "が勝ちました✨🎉🎊";
-            echo $this->resultText . PHP_EOL;
         }
         if ($result->isDraw()) {
-            $this->resultText = "引き分けです🤝";
-            echo $this->resultText . PHP_EOL;
             $this->draws++;
+            $this->resultText = "引き分けです🤝";
         }
+        echo $this->resultText . PHP_EOL;
     }
 
     public function displayBoard(): void
