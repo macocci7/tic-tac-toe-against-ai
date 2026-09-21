@@ -36,7 +36,8 @@ class TicTacToeLogic
     /**
      * プレイヤー情報の設定
      */
-    public function setPlayers(): void {
+    public function setPlayers(): void
+    {
         $name = text('あなたのお名前は何ですか？');
         if (empty($name)) {
             $name = '名無し＠通りすがり';
@@ -57,7 +58,8 @@ class TicTacToeLogic
     /**
      * ゲームの初期化
      */
-    public function initializeGame(): void {
+    public function initializeGame(): void
+    {
         $this->playCount++;
         $this->isGameOver = false;
         $this->userComment = "";
@@ -68,7 +70,8 @@ class TicTacToeLogic
     /**
      * 先攻後攻決定
      */
-    public function decideWhoGoesFirst(): void {
+    public function decideWhoGoesFirst(): void
+    {
         Colorizer::background("default")->foreground("#00aa00")
             ->echo("先行・後攻を適当に決めます。", PHP_EOL);
         shuffle($this->players);
@@ -81,7 +84,8 @@ class TicTacToeLogic
     /**
      * セル選択分岐
      */
-    public function decideCell(Player $currentPlayer, int $turn): void {
+    public function decideCell(Player $currentPlayer, int $turn): void
+    {
         match ($currentPlayer->getType()) {
             PlayerTypeEnum::HUMAN => $this->humanDecidesCell($currentPlayer, $turn),
             PlayerTypeEnum::AI => $this->aiDecidesCell($currentPlayer, $turn),
@@ -91,7 +95,8 @@ class TicTacToeLogic
     /**
      * 人間プレイヤーのセル選択
      */
-    public function humanDecidesCell(Player $currentPlayer, int $turn): void {
+    public function humanDecidesCell(Player $currentPlayer, int $turn): void
+    {
         $availableCells = $this->board->getAvailableCells();
         $options = array_map(fn($c) => ($c[0] + 1) . '行 ' . ($c[1] + 1) . '列', $availableCells);
         $choice = select(
@@ -116,7 +121,8 @@ class TicTacToeLogic
     /**
      * AIのセル選択
      */
-    public function aiDecidesCell(Player $currentPlayer, int $turn): void {
+    public function aiDecidesCell(Player $currentPlayer, int $turn): void
+    {
         Colorizer::background("default")
             ->foreground("#00ffff")
             ->echo("ターン {$turn}、" . $currentPlayer->getName() . "の番です。", PHP_EOL);
@@ -139,7 +145,7 @@ class TicTacToeLogic
             $choiceDecoded = json_decode($choice, true);
             $comment = $choiceDecoded["comment"] ?? "(No comment)";
             $cell = json_decode($choiceDecoded["cell"] ?? "[]", true);
-            if(empty($cell)) {
+            if (empty($cell)) {
                 $error = "AIがセルを選択できませんでした。選び直してください。";
                 error($error);
                 continue;
@@ -175,7 +181,8 @@ class TicTacToeLogic
     /**
      * AIのセル選択取得
      */
-    protected function getAisChoice(string $error = ""): string {
+    protected function getAisChoice(string $error = ""): string
+    {
         $availableCells = $this->board->getAvailableCells();
         return spin(
             callback: fn () => (new TicTacToeAgent($this->noConversation))
@@ -202,7 +209,8 @@ class TicTacToeLogic
     /**
      * セル選択後の結果判定
      */
-    public function checkResult(Player $currentPlayer): void {
+    public function checkResult(Player $currentPlayer): void
+    {
         $result = $this->board->checkResult($currentPlayer);
         if ($result->isInGame()) {
             return;
@@ -223,7 +231,8 @@ class TicTacToeLogic
         }
     }
 
-    public function displayBoard(): void {
+    public function displayBoard(): void
+    {
         Colorizer::attributes(["bold"])
             ->background("#996600")
             ->foreground("#ffffff")
@@ -231,7 +240,8 @@ class TicTacToeLogic
         echo $this->board->getBoard() . PHP_EOL;
     }
 
-    public function getComments(): void {
+    public function getComments(): void
+    {
         $this->userComment = text(
             label: "相手へのコメントをどうぞ",
             hint: "100文字以内で入力してください",
@@ -287,7 +297,8 @@ class TicTacToeLogic
     /**
      * ゲームの結果を表示
      */
-    public function displayResults(): void {
+    public function displayResults(): void
+    {
         Colorizer::attributes(["bold"])
             ->background("#00aa66")
             ->foreground("#ffffff")

@@ -26,7 +26,8 @@ class Board
         $this->initialize();
     }
 
-    public function initialize(): void {
+    public function initialize(): void
+    {
         $this->initialValue = new Player(type: PlayerTypeEnum::NONE, name: '', symbol: '　');
         $this->board = array_fill(0, $this->yMax, array_fill(0, $this->xMax, $this->initialValue));
         $this->cellSeparatorRow = implode($this->cellSeparatorCross, array_fill(0, $this->xMax, $this->cellSeparatorY));
@@ -36,7 +37,8 @@ class Board
     /**
      * ボードの状況取得
      */
-    public function getBoard(): string {
+    public function getBoard(): string
+    {
         $boardString = '';
         foreach ($this->board as $rowIndex => $row) {
             $boardString .= implode($this->cellSeparatorX, array_map(fn($c) => $c->getSymbol(), $row)) . PHP_EOL
@@ -47,8 +49,10 @@ class Board
 
     /**
      * 選択可能なセル抽出
+     * @return array<int, array<int, int>>  選択可能なセルの座標配列
      */
-    public function getAvailableCells(): array {
+    public function getAvailableCells(): array
+    {
         $availableCells = [];
         foreach ($this->board as $rowIndex => $row) {
             foreach ($row as $colIndex => $cell) {
@@ -63,7 +67,8 @@ class Board
     /**
      * セル選択が有効な範囲か判定
      */
-    public function isValidCellRange(int $row, int $col): bool {
+    public function isValidCellRange(int $row, int $col): bool
+    {
         $rowIndex = $row - 1;
         $colIndex = $col - 1;
         return isset($this->board[$rowIndex][$colIndex]);
@@ -72,13 +77,15 @@ class Board
     /**
      * 指定セルを選択したプレイヤー取得
      */
-    public function whoChoseCell(int $row, int $col): ?Player {
+    public function whoChoseCell(int $row, int $col): ?Player
+    {
         $rowIndex = $row - 1;
         $colIndex = $col - 1;
         return $this->board[$rowIndex][$colIndex] ?? null;
     }
 
-    public function setCell(int $rowIndex, int $colIndex, Player $player, string $comment): void {
+    public function setCell(int $rowIndex, int $colIndex, Player $player, string $comment): void
+    {
         $this->board[$rowIndex][$colIndex] = $player;
         $this->setHistory($player, $rowIndex + 1, $colIndex + 1, $comment);
     }
@@ -86,7 +93,8 @@ class Board
     /**
      * セル選択後の結果判定
      */
-    public function checkResult(Player $currentPlayer): BoardResult {
+    public function checkResult(Player $currentPlayer): BoardResult
+    {
         // 横方向の勝利条件をチェック
         foreach ($this->board as $rowIndex => $row) {
             if (count(array_unique(array_map(fn($c) => $c->getName(), $row))) === 1 && $row[0] === $currentPlayer) {
@@ -118,7 +126,8 @@ class Board
         return new BoardResult(BoardResultEnum::IN_GAME);
     }
 
-    public function setHistory(Player $player, int $row, int $col, string $comment): void {
+    public function setHistory(Player $player, int $row, int $col, string $comment): void
+    {
         $this->histories[] = [
             'player' => $player,
             'row' => $row,
@@ -129,7 +138,8 @@ class Board
         ];
     }
 
-    public function getHistories(): array {
+    public function getHistories(): array
+    {
         return $this->histories;
     }
 }

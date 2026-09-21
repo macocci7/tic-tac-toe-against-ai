@@ -17,23 +17,28 @@ class BoardResult
     ) {
     }
 
-    public function get(): BoardResultEnum {
+    public function get(): BoardResultEnum
+    {
         return $this->result;
     }
 
-    public function isInGame(): bool {
+    public function isInGame(): bool
+    {
         return $this->result === BoardResultEnum::IN_GAME;
     }
 
-    public function isWin(): bool {
+    public function isWin(): bool
+    {
         return $this->result === BoardResultEnum::WIN;
     }
 
-    public function isDraw(): bool {
+    public function isDraw(): bool
+    {
         return $this->result === BoardResultEnum::DRAW;
     }
 
-    public function getWinner(): ?Player {
+    public function getWinner(): ?Player
+    {
         return $this->winner;
     }
 }
