@@ -22,6 +22,7 @@ class TicTacToeAgent implements Agent, Conversational, HasTools, HasStructuredOu
 
     protected string $instructions;
 
+    /** @var array<int, \App\Console\Commands\Agents\TicTacToe\Cell> 選択可能なセルの配列 */
     protected array $availableCells = [];
 
     public function __construct(
@@ -73,36 +74,22 @@ class TicTacToeAgent implements Agent, Conversational, HasTools, HasStructuredOu
      */
     public function schema(JsonSchema $schema): array
     {
-        $returnArray = [
-            // 選択可能なセル座標を列挙
+        $returnArray = [    // 選択可能なセル座標を列挙
             'cell' => $schema->string()
-                ->enum($this->getCellPositionsForSchemaEnum())
+                ->enum(array_map(fn($c) => (string) $c, $this->availableCells)) // [row, col]形式の文字列配列に変換
                 ->description('Select the position of the cell on the Tic Tac Toe board, [row, col].')
                 ->required(),
         ];
         if (! $this->noConversation) {
             $returnArray['comment'] = $schema->string()
                 ->description('対戦相手に対するコメント。心理的駆け引きを踏まえて記入してください。謎めいててもいいし、挑発してもいいし、ユーモアを交えても構いません。')
-                ->min(5)
-                ->max(100)
-                ->required();
+                ->min(5)->max(100)->required();
         }
         return $returnArray;
     }
 
     /**
-     * 選択可能なセル座標を'[row, col]'形式の文字列値として配列で返す
-     */
-    public function getCellPositionsForSchemaEnum(): array
-    {
-        return array_map(
-            fn($c) => "[" . ($c[0] + 1) . ", " . ($c[1] + 1) . "]",
-            $this->availableCells
-        );
-    }
-
-    /**
-     * 選択可能なセル座標を設定
+     * 選択可能なセルを設定
      */
     public function setAvailableCells(array $availableCells): self
     {

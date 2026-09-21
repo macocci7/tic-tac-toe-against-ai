@@ -11,11 +11,13 @@
 @endforeach
 
 @foreach ($histories as $index => $history)
-### ターン{{ $index + 1 }}、{{ $history['player']->getName() }}の選択 {{ $history['cell'] }}
+### ターン{{ $index + 1 }}、{{ $history['cell']->getPlayer()->getName() }}の選択 {{ $history['cell']->asLocaleString() }}
 
 {{ $history['board'] }}
 
-- {{ $history['player']->getName() }}のコメント: {{ $history['comment'] }}
+@if (!empty($history['comment']))
+- {{ $history['cell']->getPlayer()->getName() }}のコメント: {{ $history['comment'] }}
+@endif
 
 @endforeach
 

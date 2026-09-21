@@ -21,7 +21,7 @@
 ## 選択可能なセル [行, 列]
 
 @foreach ($availableCells as $cell)
-- [{{ $cell[0] + 1 }}, {{ $cell[1] + 1 }}]
+- {{ (string) $cell }}
 @endforeach
 
 ## あなたのすること

@@ -48,4 +48,9 @@ class Player
         $this->symbol = $symbol;
         return $this;
     }
+
+    public function isNone(): bool
+    {
+        return $this->type === PlayerTypeEnum::NONE;
+    }
 }
