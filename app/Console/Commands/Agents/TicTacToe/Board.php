@@ -10,7 +10,7 @@ use App\Enums\TicTacToe\PlayerTypeEnum;
  */
 class Board
 {
-    public Player $initialValue;
+    public Player $none;
     public string $cellSeparatorX = '｜';
     public string $cellSeparatorY = 'ー';
     public string $cellSeparatorCross = '＋';
@@ -28,10 +28,15 @@ class Board
 
     public function initialize(): void
     {
-        $this->initialValue = new Player(type: PlayerTypeEnum::NONE, name: '', symbol: '　');
-        $this->board = array_fill(0, $this->yMax, array_fill(0, $this->xMax, $this->initialValue));
+        $this->none = new Player(type: PlayerTypeEnum::NONE, name: '', symbol: '　');
         $this->cellSeparatorRow = implode($this->cellSeparatorCross, array_fill(0, $this->xMax, $this->cellSeparatorY));
         $this->histories = [];
+        for ($row = 1; $row <= $this->yMax; $row++) {
+            $this->board[$row - 1] = [];
+            for ($col = 1; $col <= $this->xMax; $col++) {
+                $this->board[$row - 1][$col - 1] = new Cell($row, $col, $this->none);
+            }
+        }
     }
 
     /**
@@ -41,7 +46,7 @@ class Board
     {
         $boardString = '';
         foreach ($this->board as $rowIndex => $row) {
-            $boardString .= implode($this->cellSeparatorX, array_map(fn($c) => $c->getSymbol(), $row)) . PHP_EOL
+            $boardString .= implode($this->cellSeparatorX, array_map(fn($c) => $c->getPlayer()->getSymbol(), $row)) . PHP_EOL
                 . ($rowIndex !== ($this->yMax - 1) ? $this->cellSeparatorRow . PHP_EOL : '');
         }
         return $boardString;
@@ -56,8 +61,8 @@ class Board
         $availableCells = [];
         foreach ($this->board as $rowIndex => $row) {
             foreach ($row as $colIndex => $cell) {
-                if ($cell === $this->initialValue) {
-                    $availableCells[] = [$rowIndex, $colIndex];
+                if ($cell->isEmpty()) {
+                    $availableCells[] = $cell;
                 }
             }
         }
@@ -81,13 +86,13 @@ class Board
     {
         $rowIndex = $row - 1;
         $colIndex = $col - 1;
-        return $this->board[$rowIndex][$colIndex] ?? null;
+        return $this->board[$rowIndex][$colIndex]?->getPlayer() ?? null;
     }
 
-    public function setCell(int $rowIndex, int $colIndex, Player $player, string $comment): void
+    public function setCell(Cell $cell, string $comment): void
     {
-        $this->board[$rowIndex][$colIndex] = $player;
-        $this->setHistory($player, $rowIndex + 1, $colIndex + 1, $comment);
+        $this->board[$cell->getRow() - 1][$cell->getCol() - 1] = $cell;
+        $this->setHistory($cell, $comment);
     }
 
     /**
@@ -97,25 +102,25 @@ class Board
     {
         // 横方向の勝利条件をチェック
         foreach ($this->board as $rowIndex => $row) {
-            if (count(array_unique(array_map(fn($c) => $c->getName(), $row))) === 1 && $row[0] === $currentPlayer) {
+            if ($this->isFilledWithPlayer($row, $currentPlayer)) {
                 return new BoardResult(BoardResultEnum::WIN, $currentPlayer);
             }
         }
         // 縦方向の勝利条件をチェック
         for ($colIndex = 0; $colIndex < $this->xMax; $colIndex++) {
             $column = array_column($this->board, $colIndex);
-            if (count(array_unique(array_map(fn($c) => $c->getName(), $column))) === 1 && $column[0] === $currentPlayer) {
+            if ($this->isFilledWithPlayer($column, $currentPlayer)) {
                 return new BoardResult(BoardResultEnum::WIN, $currentPlayer);
             }
         }
         // 斜め方向の勝利条件をチェック（左上から右下）
         $diagonal1 = array_map(fn($i) => $this->board[$i][$i], range(0, $this->xMax - 1));
-        if (count(array_unique(array_map(fn($c) => $c->getName(), $diagonal1))) === 1 && $diagonal1[0] === $currentPlayer) {
+        if ($this->isFilledWithPlayer($diagonal1, $currentPlayer)) {
             return new BoardResult(BoardResultEnum::WIN, $currentPlayer);
         }
         // 斜め方向の勝利条件をチェック（右上から左下）
         $diagonal2 = array_map(fn($i) => $this->board[$i][$this->xMax - 1 - $i], range(0, $this->xMax - 1));
-        if (count(array_unique(array_map(fn($c) => $c->getName(), $diagonal2))) === 1 && $diagonal2[0] === $currentPlayer) {
+        if ($this->isFilledWithPlayer($diagonal2, $currentPlayer)) {
             return new BoardResult(BoardResultEnum::WIN, $currentPlayer);
         }
         // ボードが埋まっているかをチェック
@@ -126,13 +131,19 @@ class Board
         return new BoardResult(BoardResultEnum::IN_GAME);
     }
 
-    public function setHistory(Player $player, int $row, int $col, string $comment): void
+    /**
+     * セルが指定プレイヤーで埋まっているか判定
+     * @param array<int, Cell> $cells
+     */
+    protected function isFilledWithPlayer(array $cells, Player $player): bool {
+        return count(array_unique(array_map(fn($c) => $c->getPlayer()->getName(), $cells))) === 1
+            && $cells[0]->getPlayer() === $player;
+    }
+
+    public function setHistory(Cell $cell, string $comment): void
     {
         $this->histories[] = [
-            'player' => $player,
-            'row' => $row,
-            'col' => $col,
-            'cell' => '[' . $row . '行, ' . $col . '列]',
+            'cell' => $cell,
             'comment' => $comment,
             'board' => $this->getBoard(),
         ];

@@ -98,14 +98,15 @@ class TicTacToeLogic
     public function humanDecidesCell(Player $currentPlayer, int $turn): void
     {
         $availableCells = $this->board->getAvailableCells();
-        $options = array_map(fn($c) => ($c[0] + 1) . '行 ' . ($c[1] + 1) . '列', $availableCells);
+        $options = array_map(fn($c) => $c->getRow() . '行 ' . $c->getCol() . '列', $availableCells);
         $choice = select(
             label: "ターン {$turn}、" . $currentPlayer->getName() . "の番です。どのセルを選びますか？",
             options: $options,
             scroll: 3,
         );
         $chosenIndex = array_search($choice, $options);
-        [$rowIndex, $colIndex] = $availableCells[$chosenIndex];
+        $chosenCell = $availableCells[$chosenIndex];
+        $cell = new Cell($chosenCell->getRow(), $chosenCell->getCol(), $currentPlayer);
         if (! $this->noConversation) {
             $this->userComment = text(
                 label: "相手へのコメントをどうぞ",
@@ -114,7 +115,7 @@ class TicTacToeLogic
                 validate: fn($val) => mb_strlen($val) <= 100 ? null : "100文字以内で入力してください",
             ) ?? "";
         }
-        $this->board->setCell($rowIndex, $colIndex, $currentPlayer, $this->userComment);
+        $this->board->setCell($cell, $this->userComment);
     }
 
     /**
@@ -159,7 +160,7 @@ class TicTacToeLogic
                 error("AIが選択したセル[" . $cell[0] . ", " . $cell[1] . "]の情報を取得できませんでした。処理を中止します🚫");
                 exit;
             }
-            if ($who !== $this->board->initialValue) {
+            if (! $who->isNone()) {
                 $error = "AIが選択したセル[" . $cell[0] . ", " . $cell[1] . "]は既に" . $who->getName() . "が選択済なので選べません。選びなおしてください。";
                 error($error);
                 continue;
@@ -167,14 +168,15 @@ class TicTacToeLogic
             break;
         }
 
+        $cell = new Cell($cell[0], $cell[1], $currentPlayer);
+
         Colorizer::attributes(["bold"])->background("#0000aa")->foreground("#ffffff")->echo(" AIが選んだセル ");
-        echo " " . $cell[0] . "行 " . $cell[1] . "列" . PHP_EOL;
+        echo " " . $cell->getRow() . "行 " . $cell->getCol() . "列" . PHP_EOL;
         if (! $this->noConversation) {
             Colorizer::attributes(["bold"])->background("#ffff00")->foreground("#0000ff")->echo(" AIのコメント　 ");
             echo " " . $comment . PHP_EOL;
         }
-        [$rowIndex, $colIndex] = [$cell[0] - 1, $cell[1] - 1];
-        $this->board->setCell($rowIndex, $colIndex, $currentPlayer, $this->noConversation ? "" : $comment);
+        $this->board->setCell($cell, $this->noConversation ? "" : $comment);
     }
 
     /**
