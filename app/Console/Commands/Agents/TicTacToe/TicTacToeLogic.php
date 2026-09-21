@@ -111,7 +111,6 @@ class TicTacToeLogic
                 label: "相手へのコメントをどうぞ",
                 placeholder: "これでどうよ！？",
                 hint: "100文字以内",
-                default: $this->userComment,
                 validate: fn($val) => mb_strlen($val) <= 100 ? null : "100文字以内で入力してください",
             ) ?? "";
         }
