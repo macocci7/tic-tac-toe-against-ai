@@ -6,6 +6,7 @@ use App\Ai\Agents\TicTacToe\TicTacToeAgent;
 use App\Ai\Agents\TicTacToe\TicTacToeCommentAgent;
 use App\Enums\TicTacToe\PlayerTypeEnum;
 use Laravel\Ai\Enums\Lab;
+use Laravel\Ai\Responses\AgentResponse;
 use Macocci7\BashColorizer\Colorizer;
 
 use function Laravel\Prompts\{spin, text, select, error};
@@ -25,12 +26,14 @@ class TicTacToeLogic
     protected string $userComment = "";
     protected array $histories = [];
     protected string $resultText = "";
+    protected TokenUsages $usages;
 
     public function __construct(
         protected ?Lab $provider,
         protected ?string $model,
         protected ?bool $noConversation = false,
     ) {
+        $this->usages = new TokenUsages;
     }
 
     /**
@@ -136,7 +139,9 @@ class TicTacToeLogic
                 exit;
             }
             $i++;
-            $choice = $this->getAisChoice($error);
+            $response = $this->getAisChoice($error);
+            $this->usages->append($response);
+            $choice = (string) $response;
             if (empty($choice)) {
                 $error = "AIがセルを選択できませんでした。選び直してください。";
                 error($error);
@@ -182,7 +187,7 @@ class TicTacToeLogic
     /**
      * AIのセル選択取得
      */
-    protected function getAisChoice(string $error = ""): string
+    protected function getAisChoice(string $error = ""): AgentResponse
     {
         $availableCells = $this->board->getAvailableCells();
         return spin(
@@ -265,6 +270,7 @@ class TicTacToeLogic
                 ),
             message: "考え中・・・",
         );
+        $this->usages->append($response);
         Colorizer::attributes(["bold"])
             ->background("#006600")
             ->foreground("#ffffff")
@@ -309,5 +315,22 @@ class TicTacToeLogic
         echo "- AIの勝利回数: " . ($this->playCount - $this->yourWins - $this->draws) . PHP_EOL;
         echo "- あなたの勝率: " . ($this->playCount > 0 ? ($this->yourWins / $this->playCount) * 100 : 0) . "%" . PHP_EOL;
         echo "- AIの勝率: " . ($this->playCount > 0 ? (($this->playCount - $this->yourWins - $this->draws) / $this->playCount) * 100 : 0) . "%" . PHP_EOL;
+    }
+
+    /**
+     * トークン使用量を表示
+     */
+    public function displayTokenUsage(): void
+    {
+        Colorizer::attributes(["bold"])
+            ->background("#ffaa00")
+            ->foreground("#000000")
+            ->echo(" トークン使用量 ", PHP_EOL);
+        foreach ($this->usages->summary() as $key => $usage) {
+            echo "- 🏢 " . $usage["provider"] . " / 🤖 " . $usage["model"] . PHP_EOL;
+            echo "  - 入力トークン: " . number_format($usage["inputTokens"]) . PHP_EOL;
+            echo "  - 出力トークン: " . number_format($usage["outputTokens"]) . PHP_EOL;
+            echo "  - 合計トークン: " . number_format($usage["totalTokens"]) . PHP_EOL;
+        }
     }
 }

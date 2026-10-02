@@ -34,6 +34,7 @@ class TicTacToeCommand extends Command
         }
         echo "ゲームを終了します。お疲れ様でした。" . PHP_EOL;
         $logic->displayResults();
+        $logic->displayTokenUsage();
     }
 
     /**

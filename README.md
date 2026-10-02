@@ -2,7 +2,7 @@
 
 AI対戦３並べのCLI版です。
 
-Laravel(13) AI SDKで作りました。
+Laravel(13) AI SDKで作ったデモプロジェクトです。
 
 <img src="tic-tac-toe-against-ai-20260919.png" title="AI対戦３並べ" width="600" />
 
@@ -11,7 +11,7 @@ Laravel(13) AI SDKで作りました。
 - [Git](https://git-scm.com/book/ja/v2/%E4%BD%BF%E3%81%84%E5%A7%8B%E3%82%81%E3%82%8B-Git%E3%81%AE%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB)インストール済（なくても遊べます。あればコピーと更新が楽。）
 - PHP8.3CLI以降インストール済（Laravel13要件）
 - [Composer v2](https://getcomposer.org/)インストール済
-- Laravel AI SDK[(Text)サポート対象のAIサービス](https://laravel.com/framework/docs/13.x/ai-sdk#provider-support)が利用可能
+- Laravel AI SDK[(Text Feature)サポート対象のAIサービス](https://laravel.com/framework/docs/13.x/ai-sdk#provider-support)が利用可能
 
 ## 使い方
 
@@ -62,7 +62,7 @@ php artisan play:tic-tac-toe openai
 php artisan play:tic-tac-toe ollama gemma3:1b
 php artisan play:tic-tac-toe --no-conversation
 ```
-プロバイダー名とモデル名を省略した場合、`.env`内のAPIキーが設定されているプロバイダーが選択されます。
+プロバイダー名とモデル名を省略した場合、[config/ai.php](config/ai.php)で設定されている`default`プロバイダーが選択されます。
 
 プロバイダー名のみでモデル名を省略した場合、一番安いモデルが選択されます。
 
