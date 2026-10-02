@@ -42,11 +42,6 @@
             "npm install --ignore-scripts",
             "npm run build"
         ],
-        "update-repo": [
-            "composer update",
-            "git fetch origin",
-            "git pull origin main"
-        ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
             "@php artisan dev"

@@ -85,11 +85,6 @@ git fetch origin
 git pull origin main
 ```
 
-▼上記２つをまとめて実行
-```bash
-composer update-repo
-```
-
 ## LICENSE
 
 [MIT](LICENSE)
