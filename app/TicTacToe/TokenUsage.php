@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Console\Commands\Agents\TicTacToe;
+namespace App\TicTacToe;
 
 use Laravel\Ai\Responses\Data\Usage;
 
 /**
- * TokenUsageクラス
+ * トークン使用量クラス
  */
 class TokenUsage
 {

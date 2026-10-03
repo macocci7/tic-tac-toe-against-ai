@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Agents\TicTacToe;
+namespace App\TicTacToe;
 
 use App\Enums\TicTacToe\BoardResultEnum;
 use App\Enums\TicTacToe\PlayerTypeEnum;
