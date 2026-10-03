@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Agents\TicTacToe;
+namespace App\TicTacToe;
 
 use App\Ai\Agents\TicTacToe\TicTacToeAgent;
 use App\Ai\Agents\TicTacToe\TicTacToeCommentAgent;

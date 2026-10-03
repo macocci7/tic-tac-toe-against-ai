@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Console\Commands\Agents\TicTacToe;
+namespace App\Console\Commands\TicTacToe;
 
-use App\Console\Commands\Agents\TicTacToe\TicTacToeLogic;
+use App\TicTacToe\TicTacToeLogic;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
