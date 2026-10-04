@@ -92,7 +92,15 @@ ollamaの場合はモデル名を指定しないとエラーになります。
 
 該当するプロバイダー、該当するモデルが無い場合はエラーになります。
 
-`--no-conversation`オプションを付けることでチャットをオフにできます。
+`--no-conversation` オプションを付けることでチャットをオフにできます。
+
+`--ai-vs-ai` オプションを付けることでAI対AIモードにできます。
+
+AI対AIモードの場合、`provider`と`model`は無視され `provider1`, `model1`, `provider2`, `model2` が適用されます。
+
+AI対AIモードで `provider1`, `model1`, `provider2`, `model2` のいずれかが省略された場合、
+
+補完入力が表示され、それぞれ指定できるようになっています。
 
 ## LICENSE
 
