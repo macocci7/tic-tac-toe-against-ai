@@ -4,6 +4,8 @@ AI対戦３並べのCLI版です。
 
 Laravel(13) AI SDKで作ったデモプロジェクトです。
 
+人間プレイヤー対AIモード、AI対AIモードがあります。
+
 <img src="tic-tac-toe-against-ai-20260919.png" title="AI対戦３並べ" width="600" />
 
 ## 前提
@@ -50,10 +52,26 @@ Ollamaをローカルで使用する場合は設定不要です。
 
 CLI上でコマンドで実行します。
 
-▼コマンドの書式
+▼コマンド書式
 ```
-php artisan play:tic-tac-toe [プロバイダー名] [モデル名]
+Usage:
+  play:tic-tac-toe [options] [--] [<provider> [<model>]]
+
+Arguments:
+  provider                     AIプロバイダー (例 openai, ollama)
+  model                        AIモデル名 (例 gpt-6-luna, gemma3:1b)
+
+Options:
+      --no-conversation        対話を無効にする
+      --ai-vs-ai               AI同士で対戦させる
+      --provider1[=PROVIDER1]  (AI同士対戦) AIプロバイダー1 (例 openai, ollama)
+      --model1[=MODEL1]        (AI同士対戦) AIモデル名1 (例 gpt-6-luna, gemma3:1b)
+      --provider2[=PROVIDER2]  (AI同士対戦) AIプロバイダー2 (例 openai, ollama)
+      --model2[=MODEL2]        (AI同士対戦) AIモデル名2 (例 gpt-6-luna, gemma3:1b)
 ```
+
+- `provider`/`model` は人間プレイヤー対AIモード専用です。
+- `provider1`/`model1`, `provider2`/`model2` はAI対AIモード専用です。
 
 ▼コマンド例
 ```
@@ -61,6 +79,10 @@ php artisan play:tic-tac-toe
 php artisan play:tic-tac-toe openai
 php artisan play:tic-tac-toe ollama gemma3:1b
 php artisan play:tic-tac-toe --no-conversation
+php artisan play:tic-tac-toe --ai-vs-ai
+php artisan play:tic-tac-toe --ai-vs-ai \
+    --provider1=ollama --model1=gemma3:1b \
+    --provider2=ollama --model2=llama3.2:3b
 ```
 プロバイダー名とモデル名を省略した場合、[config/ai.php](config/ai.php)で設定されている`default`プロバイダーが選択されます。
 
@@ -71,19 +93,6 @@ ollamaの場合はモデル名を指定しないとエラーになります。
 該当するプロバイダー、該当するモデルが無い場合はエラーになります。
 
 `--no-conversation`オプションを付けることでチャットをオフにできます。
-
-## アップデートの仕方
-
-▼依存関係のアップデート
-```bash
-composer update
-```
-
-▼このリポジトリの更新をローカルに反映する
-```bash
-git fetch origin
-git pull origin main
-```
 
 ## LICENSE
 

@@ -5,6 +5,7 @@ namespace App\TicTacToe;
 use App\Ai\Agents\TicTacToe\TicTacToeAgent;
 use App\Ai\Agents\TicTacToe\TicTacToeCommentAgent;
 use App\Enums\TicTacToe\PlayerTypeEnum;
+use Illuminate\Support\Str;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Responses\AgentResponse;
 use Macocci7\BashColorizer\Colorizer;
@@ -26,20 +27,69 @@ class TicTacToeLogic
     protected string $userComment = "";
     protected array $histories = [];
     protected string $resultText = "";
+    protected GameResults $gameResults;
     protected TokenUsages $usages;
 
     public function __construct(
-        protected ?Lab $provider,
-        protected ?string $model,
-        protected ?bool $noConversation = false,
+        protected TicTacToeOptions $option,
     ) {
         $this->usages = new TokenUsages;
+    }
+
+    public function displayTitle(): void
+    {
+        echo PHP_EOL;
+        Colorizer::attributes(['bold'])
+            ->background("#00ffee")
+            ->foreground("#333333")
+            ->echo(' AI対戦' . $this->n . '目並べ ')
+            ->attributes(['reset'])
+            ->background("default")
+            ->echo($this->option->aiVsAi ? " AI同士の対戦モード" : " プレイヤー対AIモード", PHP_EOL);
+        echo PHP_EOL;
     }
 
     /**
      * プレイヤー情報の設定
      */
     public function setPlayers(): void
+    {
+        if ($this->option->aiVsAi) {
+            $this->setPlayersAiVsAi();
+        } else {
+            $this->setPlayersHumanVsAi();
+        }
+        $this->gameResults = new GameResults($this->players);
+    }
+
+    public function setPlayersAiVsAi(): void
+    {
+        $name1 = 'AI1 (' . $this->option->provider1->value . ' / ' . $this->option->model1 . ')';
+        $name2 = 'AI2 (' . $this->option->provider2->value . ' / ' . $this->option->model2 . ')';
+        $aiSymbols = config('tic-tac-toe.symbols.ai');
+        shuffle($aiSymbols);
+        $aiSymbol1 = array_pop($aiSymbols);
+        shuffle($aiSymbols);
+        $aiSymbol2 = array_pop($aiSymbols);
+        $this->players = [
+            new Player(
+                type: PlayerTypeEnum::AI,
+                name: $name1,
+                symbol: $aiSymbol1,
+                provider: $this->option->provider1,
+                model: $this->option->model1,
+            ),
+            new Player(
+                type: PlayerTypeEnum::AI,
+                name: $name2,
+                symbol: $aiSymbol2,
+                provider: $this->option->provider2,
+                model: $this->option->model2,
+            ),
+        ];
+    }
+
+    public function setPlayersHumanVsAi(): void
     {
         $name = text('あなたのお名前は何ですか？');
         if (empty($name)) {
@@ -54,7 +104,13 @@ class TicTacToeLogic
         $aiSymbol = $aiSymbols[array_rand($aiSymbols)];
         $this->players = [
             new Player(type: PlayerTypeEnum::HUMAN, name: $name, symbol: $playerSymbol),
-            new Player(type: PlayerTypeEnum::AI, name: 'AI', symbol: $aiSymbol),
+            new Player(
+                type: PlayerTypeEnum::AI,
+                name: 'AI',
+                symbol: $aiSymbol,
+                provider: $this->option->provider,
+                model: $this->option->model,
+            ),
         ];
     }
 
@@ -110,7 +166,7 @@ class TicTacToeLogic
         $chosenIndex = array_search($choice, $options);
         $chosenCell = $availableCells[$chosenIndex];
         $cell = new Cell($chosenCell->getRow(), $chosenCell->getCol(), $currentPlayer);
-        if (! $this->noConversation) {
+        if (! $this->option->noConversation) {
             $this->userComment = text(
                 label: "相手へのコメントをどうぞ",
                 placeholder: "これでどうよ！？",
@@ -139,7 +195,7 @@ class TicTacToeLogic
                 exit;
             }
             $i++;
-            $response = $this->getAisChoice($error);
+            $response = $this->getAisChoice($currentPlayer, $error);
             $this->usages->append($response);
             $choice = (string) $response;
             if (empty($choice)) {
@@ -148,6 +204,7 @@ class TicTacToeLogic
                 continue;
             }
             $choiceDecoded = json_decode($choice, true);
+            $this->userComment = $choiceDecoded["comment"] ?? "";
             $comment = $choiceDecoded["comment"] ?? "(No comment)";
             $cell = json_decode($choiceDecoded["cell"] ?? "[]", true);
             if (empty($cell)) {
@@ -177,26 +234,26 @@ class TicTacToeLogic
 
         Colorizer::attributes(["bold"])->background("#0000aa")->foreground("#ffffff")->echo(" AIが選んだセル ");
         echo " " . $cell->getRow() . "行 " . $cell->getCol() . "列" . PHP_EOL;
-        if (! $this->noConversation) {
+        if (! $this->option->noConversation) {
             Colorizer::attributes(["bold"])->background("#ffff00")->foreground("#0000ff")->echo(" AIのコメント　 ");
             echo " " . $comment . PHP_EOL;
         }
-        $this->board->setCell($cell, $this->noConversation ? "" : $comment);
+        $this->board->setCell($cell, $this->option->noConversation ? "" : $comment);
     }
 
     /**
      * AIのセル選択取得
      */
-    protected function getAisChoice(string $error = ""): AgentResponse
+    protected function getAisChoice(Player $currentPlayer, string $error = ""): AgentResponse
     {
         $availableCells = $this->board->getAvailableCells();
         return spin(
-            callback: fn () => (new TicTacToeAgent($this->noConversation))
+            callback: fn () => (new TicTacToeAgent($this->option->noConversation))
                 ->setAvailableCells($availableCells)
                 ->setInstructions(view('tic-tac-toe.instructions.choose', [
                     'n' => $this->n,
-                    'ai' => array_values(array_filter($this->players, fn($p) => $p->getType() === PlayerTypeEnum::AI))[0],
-                    'human' => array_values(array_filter($this->players, fn($p) => $p->getType() === PlayerTypeEnum::HUMAN))[0],
+                    'ai' => $currentPlayer,
+                    'opponent' => array_values(array_filter($this->players, fn($p) => $p->getCode() !== $currentPlayer->getCode()))[0],
                 ]))
                 ->prompt(view('tic-tac-toe.prompts.choose', [
                         'board' => $this->board->getBoard(),
@@ -205,8 +262,8 @@ class TicTacToeLogic
                         'error' => $error,
                         'userComment' => $this->userComment,
                     ]),
-                    provider: $this->provider,
-                    model: $this->model
+                    provider: $currentPlayer->getProvider(),
+                    model: $currentPlayer->getModel(),
                 ),
             message: "考え中・・・",
         );
@@ -224,13 +281,11 @@ class TicTacToeLogic
         $this->isGameOver = true;
         $this->displayBoard();
         if ($result->isWin()) {
-            if ($currentPlayer->getType() === PlayerTypeEnum::HUMAN) {
-                $this->yourWins++;
-            }
+            $this->gameResults->append(new GameResult($currentPlayer));
             $this->resultText = $currentPlayer->getSymbol() . $currentPlayer->getName() . "が勝ちました✨🎉🎊";
         }
         if ($result->isDraw()) {
-            $this->draws++;
+            $this->gameResults->append(new GameResult);
             $this->resultText = "引き分けです🤝";
         }
         echo $this->resultText . PHP_EOL;
@@ -247,17 +302,28 @@ class TicTacToeLogic
 
     public function getComments(): void
     {
-        $this->userComment = text(
-            label: "相手へのコメントをどうぞ",
-            hint: "100文字以内で入力してください",
-            validate: fn($val) => mb_strlen($val) <= 100 ? null : "100文字以内で入力してください",
-        );
+        if (! $this->option->aiVsAi) {
+            $this->userComment = text(
+                label: "相手へのコメントをどうぞ",
+                hint: "100文字以内で入力してください",
+                validate: fn($val) => mb_strlen($val) <= 100 ? null : "100文字以内で入力してください",
+            );
+        }
+        foreach ($this->players as $player) {
+            if ($player->isAi()) {
+                $this->getAisComment($player);
+            }
+        }
+    }
+
+    protected function getAisComment(Player $currentPlayer): void
+    {
         $response = spin(
             callback: fn () => (new TicTacToeCommentAgent)
                 ->setInstructions(view('tic-tac-toe.instructions.comment', [
                     'n' => $this->n,
-                    'ai' => array_values(array_filter($this->players, fn($p) => $p->getType() === PlayerTypeEnum::AI))[0],
-                    'human' => array_values(array_filter($this->players, fn($p) => $p->getType() === PlayerTypeEnum::HUMAN))[0],
+                    'ai' => $currentPlayer,
+                    'opponent' => array_values(array_filter($this->players, fn($p) => $p->getCode() !== $currentPlayer->getCode()))[0],
                 ]))
                 ->prompt(view('tic-tac-toe.prompts.comment', [
                         'userComment' => $this->userComment,
@@ -265,17 +331,19 @@ class TicTacToeLogic
                         'histories' => $this->board->getHistories(),
                         'resultText' => $this->resultText,
                     ]),
-                    provider: $this->provider,
-                    model: $this->model
+                    provider: $currentPlayer->getProvider(),
+                    model: $currentPlayer->getModel(),
                 ),
-            message: "考え中・・・",
+            message: $currentPlayer->getName() . "のコメントを取得中...",
         );
         $this->usages->append($response);
+        $this->userComment = (string) $response;
         Colorizer::attributes(["bold"])
             ->background("#006600")
             ->foreground("#ffffff")
-            ->echo(" AIのコメント ", PHP_EOL);
-        echo $response . PHP_EOL;
+            ->echo(" AIのコメント ");
+        echo $currentPlayer->getName() . PHP_EOL;
+        echo $this->userComment . PHP_EOL;
     }
 
     /**
@@ -295,7 +363,7 @@ class TicTacToeLogic
             $this->decideCell($currentPlayer, $turn);
             $this->checkResult($currentPlayer);
         }
-        if (! $this->noConversation) {
+        if (! $this->option->noConversation) {
             $this->getComments();
         }
     }
@@ -305,16 +373,27 @@ class TicTacToeLogic
      */
     public function displayResults(): void
     {
+        $summary = $this->gameResults->summary();
+        $results = [];
+        $results["プレイ回数"] = $summary['plays'];
+        foreach ($this->players as $player) {
+            $wins = $summary['wins'][$player->getCode()] ?? 0;
+            $results[$player->getName() . "の勝利回数"] = $wins;
+        }
+        $results["引き分け回数"] = $summary['draws'];
+        foreach ($this->players as $player) {
+            $winRate = $summary['winRates'][$player->getCode()] ?? 0;
+            $results[$player->getName() . "の勝率"] = round($winRate * 100, 1) . "%";
+        }
+        $nk = max(array_map(fn ($v) => CliStr::len($v), array_keys($results)));
+        $nv = max(array_map(fn ($v) => CliStr::len($v), array_values($results)));
         Colorizer::attributes(["bold"])
             ->background("#00aa66")
             ->foreground("#ffffff")
             ->echo(" ゲーム結果 ", PHP_EOL);
-        echo "- プレイ回数: " . $this->playCount . PHP_EOL;
-        echo "- あなたの勝利回数: " . $this->yourWins . PHP_EOL;
-        echo "- 引き分け回数: " . $this->draws . PHP_EOL;
-        echo "- AIの勝利回数: " . ($this->playCount - $this->yourWins - $this->draws) . PHP_EOL;
-        echo "- あなたの勝率: " . ($this->playCount > 0 ? ($this->yourWins / $this->playCount) * 100 : 0) . "%" . PHP_EOL;
-        echo "- AIの勝率: " . ($this->playCount > 0 ? (($this->playCount - $this->yourWins - $this->draws) / $this->playCount) * 100 : 0) . "%" . PHP_EOL;
+        foreach ($results as $label => $value) {
+            echo "- " . CliStr::padLeft($label, $nk) . ": " . CliStr::padLeft($value, $nv) . PHP_EOL;
+        }
     }
 
     /**
@@ -326,11 +405,16 @@ class TicTacToeLogic
             ->background("#ffaa00")
             ->foreground("#000000")
             ->echo(" トークン使用量 ", PHP_EOL);
-        foreach ($this->usages->summary() as $key => $usage) {
+        foreach ($this->usages->summary() as $usage) {
+            $lv = max(array_map(fn ($v) => strlen($v), [
+                number_format($usage["inputTokens"]),
+                number_format($usage["outputTokens"]),
+                number_format($usage["totalTokens"]),
+            ]));
             echo "- 🏢 " . $usage["provider"] . " / 🤖 " . $usage["model"] . PHP_EOL;
-            echo "  - 入力トークン: " . number_format($usage["inputTokens"]) . PHP_EOL;
-            echo "  - 出力トークン: " . number_format($usage["outputTokens"]) . PHP_EOL;
-            echo "  - 合計トークン: " . number_format($usage["totalTokens"]) . PHP_EOL;
+            echo "  - 入力トークン: " . Str::padLeft(number_format($usage["inputTokens"]), $lv) . PHP_EOL;
+            echo "  - 出力トークン: " . Str::padLeft(number_format($usage["outputTokens"]), $lv) . PHP_EOL;
+            echo "  - 合計トークン: " . Str::padLeft(number_format($usage["totalTokens"]), $lv) . PHP_EOL;
         }
     }
 }
