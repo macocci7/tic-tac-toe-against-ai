@@ -1,9 +1,3 @@
-@if (!empty($userComment))
-## 対戦相手からのコメント
-
-{{ $userComment }}
-
-@endif
 ## ボードの状況履歴
 
 @foreach ($players as $player)
@@ -25,6 +19,12 @@
 
 {{ $resultText }}
 
+@if (!empty($userComment))
+## 対戦相手からのコメント
+
+{{ $userComment }}
+
+@endif
 ## あなたのすること
 
 対戦相手へのコメントを100文字以内で返してください。

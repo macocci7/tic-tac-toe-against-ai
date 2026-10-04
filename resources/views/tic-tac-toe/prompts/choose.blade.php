@@ -4,12 +4,6 @@
 {{ $error }}
 
 @endif
-@if (!empty($userComment))
-## 対戦相手からのコメント
-
-{{ $userComment }}
-
-@endif
 ## 現在のボードの状況
 
 {!! $board !!}
@@ -24,6 +18,12 @@
 - {{ (string) $cell }}
 @endforeach
 
+@if (!empty($userComment))
+## 対戦相手からのコメント
+
+{{ $userComment }}
+
+@endif
 ## あなたのすること
 
 次の一手のセルを選択可能なセルから選択してください。

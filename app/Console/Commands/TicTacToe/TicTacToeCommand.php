@@ -2,29 +2,31 @@
 
 namespace App\Console\Commands\TicTacToe;
 
+use App\TicTacToe\CliOptions;
 use App\TicTacToe\TicTacToeLogic;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Laravel\Ai\Enums\Lab;
 
-use function Laravel\Prompts\{intro, confirm};
+use function Laravel\Prompts\confirm;
 
 #[Signature('play:tic-tac-toe
      {provider? : AIプロバイダー (例 openai, ollama)}
-     {model? : AIモデル名 (例 gpt-5.6-luna, gemma3:1b)}
-     {--no-conversation : 対話を無効にする}')]
+     {model? : AIモデル名 (例 gpt-6-luna, gemma3:1b)}
+     {--no-conversation : 対話を無効にする}
+     {--ai-vs-ai : AI同士で対戦させる}
+     {--provider1= : (AI同士対戦) AIプロバイダー1 (例 openai, ollama)}
+     {--model1= : (AI同士対戦) AIモデル名1 (例 gpt-6-luna, gemma3:1b)}
+     {--provider2= : (AI同士対戦) AIプロバイダー2 (例 openai, ollama)}
+     {--model2= : (AI同士対戦) AIモデル名2 (例 gpt-6-luna, gemma3:1b)}')]
 #[Description('AI対戦３並べをプレイします。')]
 class TicTacToeCommand extends Command
 {
     public function handle()
     {
-        $logic = new TicTacToeLogic(
-            $this->getProvider(),
-            $this->getModel(),
-            $this->getNoConversation(),
-        );
-        intro('AI対戦' . $logic->n . '目並べ');
+        $logic = new TicTacToeLogic(new CliOptions($this)->get());
+        $logic->displayTitle();
         $logic->setPlayers();
         while (true) {
             $logic->play();
@@ -35,37 +37,5 @@ class TicTacToeCommand extends Command
         echo "ゲームを終了します。お疲れ様でした。" . PHP_EOL;
         $logic->displayResults();
         $logic->displayTokenUsage();
-    }
-
-    /**
-     * コマンドライン引数からAIプロバイダーを取得
-     */
-    protected function getProvider(): ?Lab
-    {
-        $provider = $this->argument('provider');
-        if (empty($provider)) {
-            return null;
-        }
-        $enum = Lab::tryFrom(strtolower($provider));
-        if ($enum === null) {
-            throw new \InvalidArgumentException("Unsupported provider: $provider");
-        }
-        return $enum;
-    }
-
-    /**
-     * コマンドライン引数からAIモデル名を取得
-     */
-    protected function getModel(): ?string
-    {
-        return $this->argument('model');
-    }
-
-    /**
-     * コマンドライン引数から対話モードの設定を取得
-     */
-    protected function getNoConversation(): bool
-    {
-        return $this->option('no-conversation');
     }
 }

@@ -3,17 +3,28 @@
 namespace App\TicTacToe;
 
 use App\Enums\TicTacToe\PlayerTypeEnum;
+use Laravel\Ai\Enums\Lab;
 
 /**
  * プレイヤー定義クラス
  */
 class Player
 {
+    protected string $code;
+
     public function __construct(
         protected PlayerTypeEnum $type = PlayerTypeEnum::HUMAN,
         protected string $name = '',
         protected string $symbol = '',
+        protected ?Lab $provider = null,
+        protected ?string $model = null,
     ) {
+        $this->code = uniqid('', true);
+    }
+
+    public function getCode(): string
+    {
+        return $this->code;
     }
 
     public function getType(): PlayerTypeEnum
@@ -52,5 +63,37 @@ class Player
     public function isNone(): bool
     {
         return $this->type === PlayerTypeEnum::NONE;
+    }
+
+    public function isHuman(): bool
+    {
+        return $this->type === PlayerTypeEnum::HUMAN;
+    }
+
+    public function isAi(): bool
+    {
+        return $this->type === PlayerTypeEnum::AI;
+    }
+
+    public function getProvider(): ?Lab
+    {
+        return $this->provider;
+    }
+
+    public function setProvider(?Lab $provider): self
+    {
+        $this->provider = $provider;
+        return $this;
+    }
+
+    public function getModel(): ?string
+    {
+        return $this->model;
+    }
+
+    public function setModel(?string $model): self
+    {
+        $this->model = $model;
+        return $this;
     }
 }
